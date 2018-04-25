@@ -8,11 +8,7 @@ export * from './utils/errors';
 import { ApolloServer as ExpressServer } from './express';
 
 export class ApolloServer<Context> extends ExpressServer {
-  constructor(
-    opts: Config<express.Application, express.Request, Context> & {
-      onHealthCheck: () => Promise<any>;
-    },
-  ) {
+  constructor(opts: Config<express.Application, express.Request, Context>) {
     if (opts.app) {
       throw new Error(`It looks like "app" was passed into ApolloServer. To use a server with middleware, you need to create an ApolloServer from a variant package and pass in your app. This example uses express:
 
@@ -25,9 +21,9 @@ export class ApolloServer<Context> extends ExpressServer {
   const server = new ApolloServer({ app, resolvers, typeDefs });
   // then when you want to add the apollo server middleware
   server.applyMiddleware();
-  // then start the server, changing the start url to include /graphiql
+  // then start the server
   server.listen().then(({ url }) => {
-      console.log(\`🚀 Server ready at \${url}/graphiql\`);
+      console.log(\`🚀 Server ready at \${url}\`);
   });
 
 `);
@@ -36,24 +32,9 @@ export class ApolloServer<Context> extends ExpressServer {
     opts.app = express();
     super(opts);
 
-    opts.app.use('/.health-check', (req, res, next) => {
-      if (opts.onHealthCheck) {
-        opts
-          .onHealthCheck()
-          .then(() => {
-            res.status(200).send('Healthy');
-          })
-          .catch(() => {
-            res.status(500).send('Unhealthy');
-          });
-      } else {
-        res.status(200).send('Healthy');
-      }
-    });
-
     // when using ApolloServer without another application passed in,
     // we can assume the only thing it will be doing is serving GraphQL
     // because of that, GraphiQL should be the root path.
-    super.applyMiddleware({ graphiql: '*', path: '*' });
+    super.applyMiddleware({ path: '/' });
   }
 }
